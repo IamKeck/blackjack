@@ -3,6 +3,7 @@ module Cards where
 import Data.Semigroup ((<>))
 import System.Random
 import Data.List (nub, sortOn)
+import Data.Monoid (Sum(Sum), getSum)
 
 newtype CardNum = CardNum {getNums :: Int} deriving (Eq, Ord)
 
@@ -17,11 +18,8 @@ instance Show CardNum where
   show (CardNum 13) = "K"
   show (CardNum a) = show a
 
-calcPointOne :: [CardNum] -> Int
-calcPointOne = sum . map toPointOne
-
-calcPointEleven :: [CardNum] -> Int
-calcPointEleven = sum . map toPointEleven
+calcPoint :: (CardNum -> Int) -> [CardNum] -> Int
+calcPoint f = getSum . foldMap (Sum . f)
 
 toPointOne :: CardNum -> Int
 toPointOne (CardNum a) = if a > 10 then 10 else a
