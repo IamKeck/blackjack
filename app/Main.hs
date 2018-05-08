@@ -1,16 +1,27 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Main where
 
 import Lib
 import Player
 import Control.Monad.State.Strict
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.State.Class (MonadState)
+import Control.Monad.IO.Class (liftIO, MonadIO)
 import Control.Monad (when, void)
 import System.Random
 import Data.Semigroup ((<>))
 
 data GameState = GameState {deck :: [Card], dealer :: Player, you :: Player, currentDealerPoint :: Int}
 
-type GameMonad a = StateT GameState IO a
+newtype GameMonad a = GameMonad {unGame :: StateT GameState IO a} deriving (
+  Functor,
+  Applicative,
+  Monad,
+  MonadState GameState,
+  MonadIO
+  )
+
+runGame :: GameMonad a -> GameState -> IO (a, GameState)
+runGame m = runStateT (unGame m)
 
 yourPoint :: GameMonad (Int, Int)
 yourPoint = point . you <$> get
@@ -104,7 +115,7 @@ main = do
   g <- getStdGen
   let shuffledDeck  = shuffleDeck cardDeck g
   let initialState = GameState shuffledDeck (Player []) (Player []) 0
-  (result, state) <- runStateT mainGame initialState
+  (result, state) <- runGame mainGame initialState
   putStrLn $ show result <> "!"
   putStrLn $ "your cards:" <> (showCards . you $ state)
   putStrLn $ "dealer's cards:" <> (showCards . dealer $ state)
