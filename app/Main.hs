@@ -1,69 +1,13 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Main where
 
 import Cards
 import Player
-import Control.Monad.State.Strict
-import Control.Monad.State.Class (MonadState)
-import Control.Monad.IO.Class (liftIO, MonadIO)
+import Game
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad (when, void)
 import System.Random
 import Data.Semigroup ((<>))
 
-data GameState = GameState {deck :: [Card], dealer :: Player, you :: Player, currentDealerPoint :: Int}
-
-newtype GameMonad a = GameMonad {unGame :: StateT GameState IO a} deriving (
-  Functor,
-  Applicative,
-  Monad,
-  MonadState GameState,
-  MonadIO
-  )
-
-runGame :: GameMonad a -> GameState -> IO (a, GameState)
-runGame m = runStateT (unGame m)
-
-yourPoint :: GameMonad (Maybe Int)
-yourPoint = point . you <$> get
-
-dealersPoint :: GameMonad (Maybe Int)
-dealersPoint = point . dealer <$> get
-
-pickCard :: GameMonad Card
-pickCard = do
-  (newCard, remainingCard) <- Cards.pickCard . deck <$> get
-  modify (\s -> s {deck = remainingCard})
-  return newCard
-
-youPick :: GameMonad Card
-youPick = do
-  newCard <- Main.pickCard
-  modify (\s -> s {you = addCard (you s) newCard})
-  return newCard
-
-dealerPicks :: GameMonad Card
-dealerPicks = do
-  newCard <- Main.pickCard
-  modify (\s -> s {dealer = addCard (dealer s) newCard})
-  return newCard
-
-judge :: GameMonad Result
-judge = do
-  yp <-  yourPoint
-  dp <- dealersPoint
-  case (yp, dp) of
-    (Nothing, _) -> return YouBust
-    (_, Nothing) -> return DealerBust
-    (Just yp, Just dp)
-      | yp == dp -> return Draw
-      | yp > dp -> return YouWin
-      | otherwise -> return DealerWin
-
-updateDealersPoint :: Int -> GameMonad ()
-updateDealersPoint p = modify (\s -> s {currentDealerPoint = p})
-
-
-data Result = DealerWin | YouWin | YouBust | DealerBust | Draw deriving Show
 
 mainGameLoop :: GameMonad Result
 mainGameLoop = do
@@ -78,7 +22,7 @@ mainGameLoop = do
         Nothing -> return YouBust
         Just yp -> do
           liftIO . putStrLn $ "Your current point is:" <> show yp
-          dp <- currentDealerPoint <$> get
+          dp <- getCurrentDealersPoint
           when (dp < 17) $ void dealerPicks
           ndp <- dealersPoint
           maybe (return DealerBust) (\ndp' -> updateDealersPoint ndp' >> mainGameLoop) ndp
