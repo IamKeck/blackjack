@@ -18,8 +18,6 @@ instance Show CardNum where
   show (CardNum 13) = "K"
   show (CardNum a) = show a
 
-calcPoint :: (CardNum -> Int) -> [CardNum] -> Int
-calcPoint f = getSum . foldMap (Sum . f)
 
 toPointOne :: CardNum -> Int
 toPointOne (CardNum a) = if a > 10 then 10 else a
@@ -54,3 +52,6 @@ shuffleDeck deck gen =
 
 pickCard :: [Card] -> (Card, [Card])
 pickCard xs = (head xs, tail xs)
+
+calcPoint :: (CardNum -> Int) -> [Card] -> Int
+calcPoint f = getSum . foldMap (Sum . f . getNum)
