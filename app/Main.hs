@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Main where
 
-import Lib
+import Cards
 import Player
 import Control.Monad.State.Strict
 import Control.Monad.State.Class (MonadState)
@@ -31,7 +31,7 @@ dealersPoint = point . dealer <$> get
 
 pickCard :: GameMonad Card
 pickCard = do
-  (newCard, remainingCard) <- Lib.pickCard . deck <$> get
+  (newCard, remainingCard) <- Cards.pickCard . deck <$> get
   modify (\s -> s {deck = remainingCard})
   return newCard
 

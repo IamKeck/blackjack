@@ -1,4 +1,4 @@
-module Lib where
+module Cards where
 
 import Data.Semigroup ((<>))
 import System.Random

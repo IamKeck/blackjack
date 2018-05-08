@@ -1,6 +1,6 @@
 module Player where
 
-import Lib
+import Cards
 
 newtype Player = Player {getCards :: [Card]} deriving Show
 
