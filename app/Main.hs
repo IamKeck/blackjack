@@ -92,7 +92,7 @@ mainGameLoop = do
           maybe (return DealerBust) (\dp' -> updateDealersPoint dp >> mainGameLoop) vdp'
 
     "s" -> judge
-    _ -> mainGameLoop
+    _ -> (liftIO . putStrLn $ "Input h or s") >> mainGameLoop
 
 mainGame :: GameMonad Result
 mainGame = do
