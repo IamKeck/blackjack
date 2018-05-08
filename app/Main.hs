@@ -67,6 +67,10 @@ judge = do
       | yp > dp -> return YouWin
       | otherwise -> return DealerWin
 
+updateDealersPoint :: Int -> GameMonad ()
+updateDealersPoint p = modify (\s -> s {currentDealerPoint = p})
+
+
 data Result = DealerWin | YouWin | YouBust | DealerBust | Draw deriving Show
 
 mainGameLoop :: GameMonad Result
@@ -84,7 +88,7 @@ mainGameLoop = do
           dp <- currentDealerPoint <$> get
           when (dp < 17) $ void dealerPicks
           vdp' <- getValidPoint <$> dealersPoint
-          maybe (return DealerBust) (\dp' -> modify (\s -> s {currentDealerPoint = dp'}) >> mainGameLoop) vdp'
+          maybe (return DealerBust) (\dp' -> updateDealersPoint dp >> mainGameLoop) vdp'
 
     "s" -> judge
     _ -> mainGameLoop
@@ -106,7 +110,7 @@ mainGame = do
   else
     case vdp of
       Nothing -> return DealerBust
-      Just p -> modify (\s -> s {currentDealerPoint = p}) >> mainGameLoop
+      Just p -> updateDealersPoint p >> mainGameLoop
 
 
 main :: IO ()
