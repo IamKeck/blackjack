@@ -23,10 +23,10 @@ newtype GameMonad a = GameMonad {unGame :: StateT GameState IO a} deriving (
 runGame :: GameMonad a -> GameState -> IO (a, GameState)
 runGame m = runStateT (unGame m)
 
-yourPoint :: GameMonad (Int, Int)
+yourPoint :: GameMonad (Maybe Int)
 yourPoint = point . you <$> get
 
-dealersPoint :: GameMonad (Int, Int)
+dealersPoint :: GameMonad (Maybe Int)
 dealersPoint = point . dealer <$> get
 
 pickCard :: GameMonad Card
@@ -47,19 +47,11 @@ dealerPicks = do
   modify (\s -> s {dealer = addCard (dealer s) newCard})
   return newCard
 
-
-getValidPoint :: (Int, Int) -> Maybe Int
-getValidPoint (l, h)
-  | l > 21 && h > 21 = Nothing
-  | h > 21 = Just l
-  | otherwise = Just h
-
-
 judge :: GameMonad Result
 judge = do
-  yourValidPoint <- getValidPoint <$> yourPoint
-  dealersValidPoint <- getValidPoint <$> dealersPoint
-  case (yourValidPoint, dealersValidPoint) of
+  yp <-  yourPoint
+  dp <- dealersPoint
+  case (yp, dp) of
     (Nothing, _) -> return YouBust
     (_, Nothing) -> return DealerBust
     (Just yp, Just dp)
@@ -81,15 +73,15 @@ mainGameLoop = do
     "h" -> do
       c <- youPick
       liftIO . putStrLn $ "You've picked " <> show c
-      vyp <- getValidPoint <$> yourPoint
-      case vyp of
+      yp <- yourPoint
+      case yp of
         Nothing -> return YouBust
         Just yp -> do
           liftIO . putStrLn $ "Your current point is:" <> show yp
           dp <- currentDealerPoint <$> get
           when (dp < 17) $ void dealerPicks
-          vdp' <- getValidPoint <$> dealersPoint
-          maybe (return DealerBust) (\dp' -> updateDealersPoint dp >> mainGameLoop) vdp'
+          ndp <- dealersPoint
+          maybe (return DealerBust) (\ndp' -> updateDealersPoint ndp' >> mainGameLoop) ndp
 
     "s" -> judge
     _ -> (liftIO . putStrLn $ "Input h or s") >> mainGameLoop
@@ -103,9 +95,9 @@ mainGame = do
   dealerPicks
   c <- youPick
   liftIO . putStrLn $ "Your second card is " <> show c
-  vyp <- getValidPoint <$> yourPoint
-  vdp <- getValidPoint <$> dealersPoint
-  case (vyp, vdp) of
+  yp <- yourPoint
+  dp <- dealersPoint
+  case (yp, dp) of
     (Just 21, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return Draw
     (Just 21, _) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return YouWin
     (_, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return DealerWin
