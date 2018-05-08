@@ -85,6 +85,7 @@ mainGameLoop = do
       case vyp of
         Nothing -> return YouBust
         Just yp -> do
+          liftIO . putStrLn $ "Your current point is:" <> show yp
           dp <- currentDealerPoint <$> get
           when (dp < 17) $ void dealerPicks
           vdp' <- getValidPoint <$> dealersPoint
@@ -102,15 +103,14 @@ mainGame = do
   dealerPicks
   c <- youPick
   liftIO . putStrLn $ "Your second card is " <> show c
-  yp <- getValidPoint <$> yourPoint
+  vyp <- getValidPoint <$> yourPoint
   vdp <- getValidPoint <$> dealersPoint
-  if yp == Just 21 then do
-    liftIO . putStrLn $ "Natural Black Jack!"
-    return YouWin
-  else
-    case vdp of
-      Nothing -> return DealerBust
-      Just p -> updateDealersPoint p >> mainGameLoop
+  case (vyp, vdp) of
+    (Just 21, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return Draw
+    (Just 21, _) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return YouWin
+    (_, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return DealerWin
+    (Just yp, Just dp) -> updateDealersPoint dp >> (liftIO . putStrLn $ "Your current point is:" <> show yp) >> mainGameLoop
+    (_, _) -> (liftIO . putStrLn $ "Error!") >> return Draw
 
 
 main :: IO ()
