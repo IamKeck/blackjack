@@ -108,8 +108,7 @@ mainGame = do
 main :: IO ()
 main = do
   putStrLn "welcome to Black Jack"
-  g <- getStdGen
-  let shuffledDeck  = shuffleDeck cardDeck g
+  shuffledDeck <- shuffleDeck cardDeck <$> getStdGen
   let initialState = GameState shuffledDeck (Player []) (Player []) 0
   (result, state) <- runGame mainGame initialState
   putStrLn $ show result <> "!"
