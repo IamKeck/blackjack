@@ -38,13 +38,10 @@ yourTurn = do
 
 dealCard :: GameMonad ()
 dealCard = do
-  c <- dealerPicks
-  liftIO . putStrLn $ "Dealer's first card is " <> show c
-  c <- youPick
-  liftIO . putStrLn $ "Your first card is " <> show c
+  dealerPicks >>= liftIO . putStrLn . ("Dealer's first card is " <>) . show
+  youPick >>= liftIO . putStrLn . ("Your first card is " <>) . show
   dealerPicks
-  c <- youPick
-  liftIO . putStrLn $ "Your second card is " <> show c
+  youPick >>= liftIO . putStrLn . ("Your second card is " <>) . show
   yp <- yourPoint
   dp <- dealersPoint
   case (yp, dp) of
