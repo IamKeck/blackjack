@@ -8,17 +8,17 @@ import Control.Monad (when, void)
 import System.Random
 import Data.Semigroup ((<>))
 
-dealersTurn :: GameMonad Result
+dealersTurn :: GameMonad (Maybe Result)
 dealersTurn = do
   dp <- getCurrentDealersPoint
   when (dp < 17) $ void dealerPicks
   ndp <- dealersPoint
   case ndp of
-    Nothing -> return DealerBust
-    Just _ -> judge
+    Nothing -> return (Just DealerBust)
+    Just _ -> return Nothing
 
-mainGameLoop :: GameMonad Result
-mainGameLoop = do
+yourTurn :: GameMonad (Maybe Result)
+yourTurn = do
   liftIO . putStrLn $ "Hit(h) or Stand(s)"
   s <- liftIO  getLine
   case s of
@@ -27,16 +27,16 @@ mainGameLoop = do
       liftIO . putStrLn $ "You've picked " <> show c
       yp <- yourPoint
       case yp of
-        Nothing -> return YouBust
+        Nothing -> return (Just YouBust)
         Just yp -> do
           liftIO . putStrLn $ "Your current point is:" <> show yp
-          mainGameLoop
+          yourTurn
 
-    "s" -> dealersTurn
-    _ -> (liftIO . putStrLn $ "Input h or s") >> mainGameLoop
+    "s" -> return Nothing
+    _ -> (liftIO . putStrLn $ "Input h or s") >> yourTurn
 
-mainGame :: GameMonad Result
-mainGame = do
+dealCard :: GameMonad (Maybe Result)
+dealCard = do
   c <- dealerPicks
   liftIO . putStrLn $ "Dealer's first card is " <> show c
   c <- youPick
@@ -47,11 +47,27 @@ mainGame = do
   yp <- yourPoint
   dp <- dealersPoint
   case (yp, dp) of
-    (Just 21, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return Draw
-    (Just 21, _) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return YouWin
-    (_, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return DealerWin
-    (Just yp, Just dp) -> updateDealersPoint dp >> (liftIO . putStrLn $ "Your current point is:" <> show yp) >> mainGameLoop
-    (_, _) -> (liftIO . putStrLn $ "Error!") >> return Draw
+    (Just 21, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return (Just Draw)
+    (Just 21, _) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return (Just YouWin)
+    (_, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >> return (Just DealerWin)
+    (Just yp, Just dp) -> updateDealersPoint dp >> (liftIO . putStrLn $ "Your current point is:" <> show yp) >> return Nothing
+    (_, _) -> (liftIO . putStrLn $ "Error!") >> return (Just Draw)
+
+mainGame :: GameMonad Result
+mainGame = do
+  mr <- dealCard
+  case mr of
+    Just r -> return r
+    Nothing -> do
+      mr' <- yourTurn
+      case mr' of
+        Just r' -> return r'
+        Nothing -> do
+          mr'' <- dealersTurn
+          case mr'' of
+            Just r'' -> return r''
+            Nothing -> judge
+
 
 
 main :: IO ()
