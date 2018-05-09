@@ -64,8 +64,8 @@ main = do
   shuffledDeck <- shuffleDeck cardDeck <$> getStdGen
   let initialState = GameState shuffledDeck (Player []) (Player [])
   (result, state) <- runGame mainGame initialState
-  putStrLn $ show result <> "!"
-  putStrLn $ "your cards:" <> (showCards . you $ state)
-  putStrLn $ "dealer's cards:" <> (showCards . dealer $ state)
+  putStrLn .  (<> "!") . show $ result
+  putStrLn . ("your cards:" <>) . showCards . you $ state
+  putStrLn . ("dealer's cards:" <>) . showCards . dealer $ state
   where
     showCards = show . reverse . getCards
