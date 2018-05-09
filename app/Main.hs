@@ -24,12 +24,12 @@ yourTurn = do
   case s of
     "h" -> do
       c <- youPick
-      liftIO . putStrLn $ "You've picked " <> show c
+      liftIO . putStrLn . ("You've picked " <>) . show $ c
       yp <- yourPoint
       case yp of
         Nothing -> finishGame YouBust
         Just yp -> do
-          liftIO . putStrLn $ "Your current point is:" <> show yp
+          liftIO . putStrLn . ("Your current point is:" <>) . show $ yp
           yourTurn
 
     "s" -> return ()
