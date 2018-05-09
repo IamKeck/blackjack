@@ -10,12 +10,12 @@ import Data.Semigroup ((<>))
 
 dealersTurn :: GameMonad ()
 dealersTurn = do
-  dp <- getCurrentDealersPoint
-  when (dp < 17) $ void dealerPicks
-  ndp <- dealersPoint
-  case ndp of
+  dp <- dealersPoint
+  case dp of
     Nothing -> finishGame DealerBust
-    Just _ -> return ()
+    Just p
+        | p < 17 -> dealerPicks >> dealersTurn
+        | otherwise -> return ()
 
 yourTurn :: GameMonad ()
 yourTurn = do
@@ -47,7 +47,7 @@ dealCard = do
     (Just 21, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >>  finishGame Draw
     (Just 21, _) -> (liftIO . putStrLn $ "Natural Black Jack!") >> finishGame YouWin
     (_, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >> finishGame DealerWin
-    (Just yp, Just dp) -> updateDealersPoint dp >> (liftIO . putStrLn $ "Your current point is:" <> show yp) >> return ()
+    (Just yp, Just dp) -> void . liftIO . putStrLn . ("Your current point is:" <>) . show $ yp
     (_, _) -> (liftIO . putStrLn $ "Error!") >> finishGame Draw
 
 mainGame :: GameMonad Result
@@ -58,12 +58,11 @@ mainGame = do
     judge
 
 
-
 main :: IO ()
 main = do
   putStrLn "welcome to Black Jack"
   shuffledDeck <- shuffleDeck cardDeck <$> getStdGen
-  let initialState = GameState shuffledDeck (Player []) (Player []) 0
+  let initialState = GameState shuffledDeck (Player []) (Player [])
   (result, state) <- runGame mainGame initialState
   putStrLn $ show result <> "!"
   putStrLn $ "your cards:" <> (showCards . you $ state)

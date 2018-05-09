@@ -12,8 +12,7 @@ import Player
 
 data GameState = GameState {deck :: [Card],
                             dealer :: Player,
-                            you :: Player,
-                            currentDealerPoint :: Int}
+                            you :: Player}
 
 newtype GameMonad a = GameMonad (ExceptT Result (StateT GameState IO) a) deriving (
   Functor,
@@ -71,9 +70,3 @@ judge = do
       | yp == dp -> return Draw
       | yp > dp -> return YouWin
       | otherwise -> return DealerWin
-
-updateDealersPoint :: Int -> GameMonad ()
-updateDealersPoint p = modify (\s -> s {currentDealerPoint = p})
-
-getCurrentDealersPoint :: GameMonad Int
-getCurrentDealersPoint = currentDealerPoint <$> get
