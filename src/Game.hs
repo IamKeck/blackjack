@@ -5,6 +5,7 @@ module Game where
 import Control.Monad.State.Strict (StateT(runStateT), get, modify)
 import Control.Monad.State.Class (MonadState)
 import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Except (ExceptT, MonadError(throwError), runExceptT)
 import Data.Semigroup ((<>))
 import Cards
 import Player
@@ -14,18 +15,23 @@ data GameState = GameState {deck :: [Card],
                             you :: Player,
                             currentDealerPoint :: Int}
 
-newtype GameMonad a = GameMonad (StateT GameState IO a) deriving (
+newtype GameMonad a = GameMonad (ExceptT Result (StateT GameState IO) a) deriving (
   Functor,
   Applicative,
   Monad,
   MonadState GameState,
-  MonadIO
+  MonadIO,
+  MonadError Result
   )
 
 data Result = DealerWin | YouWin | YouBust | DealerBust | Draw deriving Show
 
-runGame :: GameMonad a -> GameState -> IO (a, GameState)
-runGame (GameMonad m) = runStateT m
+runGame :: GameMonad Result -> GameState -> IO (Result, GameState)
+runGame (GameMonad m) s = do
+    (mr, s) <- runStateT (runExceptT m) s
+    case mr of
+        Left r -> return (r, s)
+        Right r -> return (r, s)
 
 yourPoint :: GameMonad (Maybe Int)
 yourPoint = point . you <$> get
