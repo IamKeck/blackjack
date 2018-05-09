@@ -7,10 +7,6 @@ import Data.Monoid (Sum(Sum), getSum)
 
 newtype CardNum = CardNum {getNums :: Int} deriving (Eq, Ord)
 
-instance Bounded CardNum where
-  minBound = CardNum 1
-  maxBound = CardNum 13
-
 instance Show CardNum where
   show (CardNum 1) = "A"
   show (CardNum 11) = "J"
