@@ -24,6 +24,9 @@ newtype GameMonad a = GameMonad (ExceptT Result (StateT GameState IO) a) derivin
   MonadError Result
   )
 
+finishGame :: Result -> GameMonad ()
+finishGame = throwError
+
 data Result = DealerWin | YouWin | YouBust | DealerBust | Draw deriving Show
 
 runGame :: GameMonad Result -> GameState -> IO (Result, GameState)

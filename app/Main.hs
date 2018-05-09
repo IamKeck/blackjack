@@ -7,7 +7,6 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad (when, void)
 import System.Random
 import Data.Semigroup ((<>))
-import Control.Monad.Except (MonadError(throwError))
 
 dealersTurn :: GameMonad ()
 dealersTurn = do
@@ -15,7 +14,7 @@ dealersTurn = do
   when (dp < 17) $ void dealerPicks
   ndp <- dealersPoint
   case ndp of
-    Nothing -> throwError DealerBust
+    Nothing -> finishGame DealerBust
     Just _ -> return ()
 
 yourTurn :: GameMonad ()
@@ -28,7 +27,7 @@ yourTurn = do
       liftIO . putStrLn $ "You've picked " <> show c
       yp <- yourPoint
       case yp of
-        Nothing -> throwError YouBust
+        Nothing -> finishGame YouBust
         Just yp -> do
           liftIO . putStrLn $ "Your current point is:" <> show yp
           yourTurn
@@ -45,11 +44,11 @@ dealCard = do
   yp <- yourPoint
   dp <- dealersPoint
   case (yp, dp) of
-    (Just 21, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >>  throwError Draw
-    (Just 21, _) -> (liftIO . putStrLn $ "Natural Black Jack!") >> throwError YouWin
-    (_, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >> throwError DealerWin
+    (Just 21, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >>  finishGame Draw
+    (Just 21, _) -> (liftIO . putStrLn $ "Natural Black Jack!") >> finishGame YouWin
+    (_, Just 21) -> (liftIO . putStrLn $ "Natural Black Jack!") >> finishGame DealerWin
     (Just yp, Just dp) -> updateDealersPoint dp >> (liftIO . putStrLn $ "Your current point is:" <> show yp) >> return ()
-    (_, _) -> (liftIO . putStrLn $ "Error!") >> throwError Draw
+    (_, _) -> (liftIO . putStrLn $ "Error!") >> finishGame Draw
 
 mainGame :: GameMonad Result
 mainGame = do
