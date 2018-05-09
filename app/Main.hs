@@ -8,6 +8,14 @@ import Control.Monad (when, void)
 import System.Random
 import Data.Semigroup ((<>))
 
+dealersTurn :: GameMonad Result
+dealersTurn = do
+  dp <- getCurrentDealersPoint
+  when (dp < 17) $ void dealerPicks
+  ndp <- dealersPoint
+  case ndp of
+    Nothing -> return DealerBust
+    Just _ -> judge
 
 mainGameLoop :: GameMonad Result
 mainGameLoop = do
@@ -22,12 +30,9 @@ mainGameLoop = do
         Nothing -> return YouBust
         Just yp -> do
           liftIO . putStrLn $ "Your current point is:" <> show yp
-          dp <- getCurrentDealersPoint
-          when (dp < 17) $ void dealerPicks
-          ndp <- dealersPoint
-          maybe (return DealerBust) (\ndp' -> updateDealersPoint ndp' >> mainGameLoop) ndp
+          mainGameLoop
 
-    "s" -> judge
+    "s" -> dealersTurn
     _ -> (liftIO . putStrLn $ "Input h or s") >> mainGameLoop
 
 mainGame :: GameMonad Result
